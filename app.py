@@ -22,6 +22,8 @@ df = run_query("SELECT * FROM `personal-consumption-tracker.consumption.combined
 
 df_agg = df.resample("M").count()
 
+st.markdown("### Alcoholic drinks consumed per month")
+
 st.bar_chart(data=df_agg)
 
 # st.write(df.resample("M").sum())
