@@ -49,18 +49,30 @@ def get_and_process_data():
 def chart_drinks_per_period(df, aggregation_short, aggregation_label, normalization):
     """Make a bar chart of the number of drinks consumed per time period"""
 
-    column_to_chart = "count_of_drinks" if normalization == 'absolute count' else "drinks_per_day"
-
     df_date_range = get_date_spine(df)
     
-    count_of_days = df_date_range.set_index("date").resample(aggregation_short,convention='start').size().rename("count_of_days")
-    count_of_drinks = df.set_index("date_time").resample(aggregation_short,convention='start').size().rename("count_of_drinks")
+    if aggregation_label == "day of week":
+        count_of_days = df.groupby(["day_of_week","day_number_of_week"]).size().rename("count_of_drinks")
+        count_of_drinks = df_date_range.groupby(["day_of_week","day_number_of_week"]).size().rename("count_of_days")
+    else:
+        count_of_days = df_date_range.set_index("date").resample(aggregation_short,convention='start').size().rename("count_of_days")
+        count_of_drinks = df.set_index("date_time").resample(aggregation_short,convention='start').size().rename("count_of_drinks")
 
     df_agg = pd.concat([count_of_drinks, count_of_days], axis=1).reset_index()
     df_agg = df_agg.rename({"index":"date_time"}, axis=1)
+
     df_agg["drinks_per_day"] = df_agg["count_of_drinks"] / df_agg["count_of_days"]
 
-    c = alt.Chart(df_agg).mark_bar(width=BAR_WIDTH).encode(x="date_time",y=column_to_chart).properties(
+    if aggregation_label == "day of week":
+        x = alt.X('day_of_week:N', type="nominal" ,sort=None)
+        df_agg = df_agg.sort_values("day_number_of_week")
+
+    else:
+        x = "date_time"
+
+    y_column_to_chart = "count_of_drinks" if normalization == 'absolute count' else "drinks_per_day"
+
+    c = alt.Chart(df_agg).mark_bar(width=BAR_WIDTH).encode(x=x,y=y_column_to_chart).properties(
         title=f'drinks by {aggregation_label}'
     )
 
@@ -78,20 +90,6 @@ def get_date_spine(df):
 
     return df_date_range
 
-def chart_drinks_per_day_of_week(df):
-    drinks_count = df.groupby(["day_of_week","day_number_of_week"]).size().rename("count_of_drinks")
-
-    df_date_range = get_date_spine(df)
-    day_counts = df_date_range.groupby(["day_of_week","day_number_of_week"]).size().rename("count_of_days")
-
-    df_drinks_per_day = pd.concat([drinks_count, day_counts],axis=1).reset_index().sort_values("day_number_of_week")
-    df_drinks_per_day["drinks_per_day"] = df_drinks_per_day["count_of_drinks"] / df_drinks_per_day["count_of_days"]
-
-    c = alt.Chart(df_drinks_per_day).mark_bar().encode(x="day_number_of_week",y="drinks_per_day").properties(
-        title=f'drinks per day'
-    )
-
-    st.altair_chart(c, use_container_width=True)
 
 if __name__ == "__main__":
 
@@ -99,7 +97,7 @@ if __name__ == "__main__":
 
     df = get_and_process_data()
     
-    aggregation_dict = {"month":"MS","quarter":"QS"}
+    aggregation_dict = {"month":"MS","quarter":"QS","day of week":None}
     aggregation_label = st.selectbox("aggregation",aggregation_dict.keys())
     aggregation_short = aggregation_dict.get(aggregation_label)
 
@@ -107,4 +105,3 @@ if __name__ == "__main__":
 
     chart_drinks_per_period(df, aggregation_short, aggregation_label, normalization)  
 
-    chart_drinks_per_day_of_week(df)
