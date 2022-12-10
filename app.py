@@ -5,7 +5,7 @@ import altair as alt
 from google.oauth2 import service_account
 from google.cloud import bigquery
 
-READ_FROM_FILE = True
+READ_FROM_FILE = False
 
 BAR_WIDTH = 15
 
@@ -43,8 +43,10 @@ def get_and_process_data():
     return process_dataframe(df)
 
 
-def chart_drinks_per_period(df, aggregation_short, aggregation_label):
+def chart_drinks_per_period(df, aggregation_short, aggregation_label, normalization):
     """Make a bar chart of the number of drinks consumed per time period"""
+
+    column_to_chart = "count_of_drinks" if normalization == 'absolute count' else "drinks_per_day"
 
     df_date_range = get_date_spine(df)
     
@@ -52,13 +54,11 @@ def chart_drinks_per_period(df, aggregation_short, aggregation_label):
     count_of_drinks = df.set_index("date_time").resample(aggregation_short,convention='start').size().rename("count_of_drinks")
 
     df_agg = pd.concat([count_of_drinks, count_of_days], axis=1).reset_index()
-
     df_agg = df_agg.rename({"index":"date_time"}, axis=1)
-
     df_agg["drinks_per_day"] = df_agg["count_of_drinks"] / df_agg["count_of_days"]
 
-    c = alt.Chart(df_agg).mark_bar(width=BAR_WIDTH).encode(x="date_time",y="drinks_per_day").properties(
-        title=f'average drinks per day by {aggregation_label}'
+    c = alt.Chart(df_agg).mark_bar(width=BAR_WIDTH).encode(x="date_time",y=column_to_chart).properties(
+        title=f'drinks by {aggregation_label}'
     )
 
     st.altair_chart(c, use_container_width=True)
@@ -100,6 +100,8 @@ if __name__ == "__main__":
     aggregation_label = st.selectbox("aggregation",aggregation_dict.keys())
     aggregation_short = aggregation_dict.get(aggregation_label)
 
-    chart_drinks_per_period(df, aggregation_short, aggregation_label)  
+    normalization = st.radio("normalization",["absolute count","average drinks per day"])
+
+    chart_drinks_per_period(df, aggregation_short, aggregation_label, normalization)  
 
     chart_drinks_per_day_of_week(df)
