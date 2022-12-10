@@ -82,7 +82,7 @@ def get_date_spine(df):
     """Get dataframe with days between max and min of dataframe"""
 
     min_date = df["date_time"].min()
-    max_date = df["date_time"].max()
+    max_date = pd.to_datetime("today")
     df_date_range = pd.DataFrame(pd.date_range(min_date.date(),max_date.date(), tz="UTC"),columns=["date"])
 
     df_date_range["day_of_week"] = df_date_range["date"].dt.day_name()
