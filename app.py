@@ -7,6 +7,14 @@ import altair as alt
 from google.oauth2 import service_account
 from google.cloud import bigquery
 
+BAR_WIDTH = 15
+
+# Perform query.
+# Uses st.experimental_memo to only rerun when the query changes or after 10 min.
+@st.experimental_memo(ttl=600)
+def run_query(query):
+    return client.query(query).to_dataframe()
+    
 
 # Create API client.
 credentials = service_account.Credentials.from_service_account_info(
@@ -14,11 +22,6 @@ credentials = service_account.Credentials.from_service_account_info(
 )
 client = bigquery.Client(credentials=credentials)
 
-# Perform query.
-# Uses st.experimental_memo to only rerun when the query changes or after 10 min.
-@st.experimental_memo(ttl=600)
-def run_query(query):
-    return client.query(query).to_dataframe()
 
 
 df = run_query("SELECT * FROM `personal-consumption-tracker.consumption.combined_drinks`")
@@ -36,7 +39,7 @@ def drinks_per_period(df, aggregation_short):
 
     df_agg = df.set_index("date_time").resample(aggregation_short,convention='start').count().reset_index()
 
-    c = alt.Chart(df_agg).mark_bar(width=20).encode(x="date_time",y="drink_type").properties(
+    c = alt.Chart(df_agg).mark_bar(width=BAR_WIDTH).encode(x="date_time",y="drink_type").properties(
         title=f'drinks per {aggregation}'
     )
 
