@@ -114,5 +114,5 @@ if __name__ == "__main__":
     st.markdown(("Consuming 100g alcohol per week (roughly 1 drink per day) or more "
                  "is associated with increased risk of all cause mortality " 
                  "according to 2018 [study](https://doi.org/10.1016/S0140-6736(18)30134-X)"))
-    st.image("all_cause_mortality.jpg") 
+    st.image("media/all_cause_mortality.jpg") 
 
