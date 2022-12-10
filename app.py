@@ -1,5 +1,3 @@
-# streamlit_app.py
-
 import streamlit as st
 import pandas as pd
 import altair as alt
@@ -18,7 +16,6 @@ def get_bigquery_client():
     return bigquery.Client(credentials=credentials)
 
 @st.experimental_memo(ttl=600)
-
 def run_query(query, _client):
     """Run database query"""
 
@@ -43,17 +40,19 @@ def chart_drinks_per_period(df, aggregation_short):
 
     st.altair_chart(c, use_container_width=True)
 
-client = get_bigquery_client()
-query = "SELECT * FROM `personal-consumption-tracker.consumption.combined_drinks`"
-df = run_query(query, client)
-df = process_dataframe(df)
 
-st.markdown("### Alcoholic drinks consumed per time period")
+if __name__ == "__main__":
 
-aggregation_dict = {"month":"MS","quarter":"QS"}
-aggregation = st.selectbox("aggregation",aggregation_dict.keys())
-aggregation_short = aggregation_dict.get(aggregation)
+    st.markdown("### Alcoholic drinks consumed per time period")
 
+    client = get_bigquery_client()
+    query = "SELECT * FROM `personal-consumption-tracker.consumption.combined_drinks`"
+    df = run_query(query, client)
+    df = process_dataframe(df)
 
-chart_drinks_per_period(df, aggregation_short)
+    aggregation_dict = {"month":"MS","quarter":"QS"}
+    aggregation = st.selectbox("aggregation",aggregation_dict.keys())
+    aggregation_short = aggregation_dict.get(aggregation)
+
+    chart_drinks_per_period(df, aggregation)
 
