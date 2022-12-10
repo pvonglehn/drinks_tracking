@@ -5,6 +5,8 @@ import altair as alt
 from google.oauth2 import service_account
 from google.cloud import bigquery
 
+READ_FROM_FILE = True
+
 BAR_WIDTH = 15
 
 def get_bigquery_client():
@@ -45,14 +47,18 @@ if __name__ == "__main__":
 
     st.markdown("### Alcoholic drinks consumed per time period")
 
-    client = get_bigquery_client()
-    query = "SELECT * FROM `personal-consumption-tracker.consumption.combined_drinks`"
-    df = run_query(query, client)
+    if READ_FROM_FILE:
+        df = pd.read_csv("data/test_data.csv", parse_dates=['date_time'])
+    else:
+        client = get_bigquery_client()
+        query = "SELECT * FROM `personal-consumption-tracker.consumption.combined_drinks`"
+        df = run_query(query, client)
+        
     df = process_dataframe(df)
 
     aggregation_dict = {"month":"MS","quarter":"QS"}
     aggregation = st.selectbox("aggregation",aggregation_dict.keys())
     aggregation_short = aggregation_dict.get(aggregation)
 
-    chart_drinks_per_period(df, aggregation)
+    chart_drinks_per_period(df, aggregation_short)
 
