@@ -53,6 +53,25 @@ def chart_drinks_per_period(df, aggregation_short):
 
     st.altair_chart(c, use_container_width=True)
 
+def chart_drinks_per_day_of_week(df):
+    drinks_count = df.groupby(["day_of_week","day_number_of_week"]).size().rename("count_of_drinks")
+
+    min_date = df["date_time"].min()
+    max_date = df["date_time"].max()
+    df_date_range = pd.DataFrame(pd.date_range(min_date.date(),max_date.date()),columns=["date"])
+
+    df_date_range["day_of_week"] = df_date_range["date"].dt.day_name()
+    df_date_range["day_number_of_week"] = df_date_range["date"].dt.day_of_week
+    day_counts = df_date_range.groupby(["day_of_week","day_number_of_week"]).size().rename("count_of_days")
+
+    df_drinks_per_day = pd.concat([drinks_count, day_counts],axis=1).reset_index().sort_values("day_number_of_week")
+    df_drinks_per_day["drinks_per_day"] = df_drinks_per_day["count_of_drinks"] / df_drinks_per_day["count_of_days"]
+
+    c = alt.Chart(df_drinks_per_day).mark_bar().encode(x="day_number_of_week",y="drinks_per_day").properties(
+        title=f'drinks per day'
+    )
+
+    st.altair_chart(c, use_container_width=True)
 
 if __name__ == "__main__":
 
@@ -64,5 +83,6 @@ if __name__ == "__main__":
     aggregation = st.selectbox("aggregation",aggregation_dict.keys())
     aggregation_short = aggregation_dict.get(aggregation)
 
-    chart_drinks_per_period(df, aggregation_short)
+    chart_drinks_per_period(df, aggregation_short)  
 
+    chart_drinks_per_day_of_week(df)
