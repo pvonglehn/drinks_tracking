@@ -9,33 +9,31 @@ from google.cloud import bigquery
 
 BAR_WIDTH = 15
 
-# Perform query.
-# Uses st.experimental_memo to only rerun when the query changes or after 10 min.
+def get_bigquery_client():
+    """Get Bigquery API client"""
+
+    credentials = service_account.Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"]
+    )
+    return bigquery.Client(credentials=credentials)
+
 @st.experimental_memo(ttl=600)
-def run_query(query):
-    return client.query(query).to_dataframe()
+
+def run_query(query, _client):
+    """Run database query"""
+
+    return _client.query(query).to_dataframe()
     
+def process_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """Add features to dataframe"""
 
-# Create API client.
-credentials = service_account.Credentials.from_service_account_info(
-    st.secrets["gcp_service_account"]
-)
-client = bigquery.Client(credentials=credentials)
+    df["day_of_week"] = df["date_time"].dt.day_name()
+    df["day_number_of_week"] = df["date_time"].dt.day_of_week
 
+    return df
 
-
-df = run_query("SELECT * FROM `personal-consumption-tracker.consumption.combined_drinks`")
-
-df["day_of_week"] = df["date_time"].dt.day_name()
-df["day_number_of_week"] = df["date_time"].dt.day_of_week
-
-st.markdown("### Alcoholic drinks consumed per time period")
-
-aggregation_dict = {"month":"MS","quarter":"QS"}
-aggregation = st.selectbox("aggregation",aggregation_dict.keys())
-aggregation_short = aggregation_dict.get(aggregation)
-
-def drinks_per_period(df, aggregation_short):
+def chart_drinks_per_period(df, aggregation_short):
+    """Make a bar chart of the number of drinks consumed per time period"""
 
     df_agg = df.set_index("date_time").resample(aggregation_short,convention='start').count().reset_index()
 
@@ -45,5 +43,17 @@ def drinks_per_period(df, aggregation_short):
 
     st.altair_chart(c, use_container_width=True)
 
-drinks_per_period(df, aggregation_short)
+client = get_bigquery_client()
+query = "SELECT * FROM `personal-consumption-tracker.consumption.combined_drinks`"
+df = run_query(query, client)
+df = process_dataframe(df)
+
+st.markdown("### Alcoholic drinks consumed per time period")
+
+aggregation_dict = {"month":"MS","quarter":"QS"}
+aggregation = st.selectbox("aggregation",aggregation_dict.keys())
+aggregation_short = aggregation_dict.get(aggregation)
+
+
+chart_drinks_per_period(df, aggregation_short)
 
