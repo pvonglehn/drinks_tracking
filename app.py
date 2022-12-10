@@ -7,7 +7,6 @@ from google.oauth2 import service_account
 from google.cloud import bigquery
 
 env = os.environ.get("STREAMLIT_ENV","prod")
-
 READ_FROM_FILE = True if env == "dev" else False 
 
 BAR_WIDTH = 15
@@ -70,13 +69,19 @@ def chart_drinks_per_period(df, aggregation_short, aggregation_label, normalizat
     else:
         x = "date_time"
 
-    y_column_to_chart = "count_of_drinks" if normalization == 'absolute count' else "drinks_per_day"
+    if normalization == 'average drinks per day':
+        y_column_to_chart = "drinks_per_day"
+        line = alt.Chart(pd.DataFrame({'y': [1]})).mark_rule().encode(y='y')
+    else:
+        y_column_to_chart = "count_of_drinks" 
+        line = alt.Chart(pd.DataFrame({'y': [0]})).mark_rule().encode(y='y')
+
 
     c = alt.Chart(df_agg).mark_bar(width=BAR_WIDTH).encode(x=x,y=y_column_to_chart).properties(
         title=f'drinks by {aggregation_label}'
     )
 
-    st.altair_chart(c, use_container_width=True)
+    st.altair_chart(c + line, use_container_width=True)
 
 def get_date_spine(df):
     """Get dataframe with days between max and min of dataframe"""
@@ -103,5 +108,11 @@ if __name__ == "__main__":
 
     normalization = st.radio("normalization",["absolute count","average drinks per day"])
 
-    chart_drinks_per_period(df, aggregation_short, aggregation_label, normalization)  
+    chart_drinks_per_period(df, aggregation_short, aggregation_label, normalization) 
+
+
+    st.markdown(("Consuming 100g alcohol per week (roughly 1 drink per day) or more "
+                 "is associated with increased risk of all cause mortality " 
+                 "according to 2018 [study](https://doi.org/10.1016/S0140-6736(18)30134-X)"))
+    st.image("all_cause_mortality.jpg") 
 
