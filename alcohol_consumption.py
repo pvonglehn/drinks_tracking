@@ -3,28 +3,13 @@ import pandas as pd
 import altair as alt
 import os
 
-from google.oauth2 import service_account
-from google.cloud import bigquery
+from helpers import get_bigquery_client, run_query
 
 env = os.environ.get("STREAMLIT_ENV","prod")
 READ_FROM_FILE = True if env == "dev" else False 
 
 BAR_WIDTH = 15
 
-def get_bigquery_client():
-    """Get Bigquery API client"""
-
-    credentials = service_account.Credentials.from_service_account_info(
-        st.secrets["gcp_service_account"]
-    )
-    return bigquery.Client(credentials=credentials)
-
-@st.experimental_memo(ttl=600)
-def run_query(query, _client):
-    """Run database query"""
-
-    return _client.query(query).to_dataframe()
-    
 def process_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """Add features to dataframe"""
 
