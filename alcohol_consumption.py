@@ -102,6 +102,6 @@ if __name__ == "__main__":
                  "is associated with increased risk of all cause mortality " 
                  "according to a 2018 [study](https://doi.org/10.1016/S0140-6736(18)30134-X) in the Lancet."
                  "\nAlthough moderate drinking is associated with lower risk of cardiovascular disease events"
-                 ", there is amount of alcohol consumption which results in lower all cause mortality risk."))
+                 ", there is no amount of alcohol consumption which results in lower all cause mortality risk."))
     st.image("media/all_cause_mortality.jpg") 
 
