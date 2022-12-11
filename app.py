@@ -106,13 +106,17 @@ if __name__ == "__main__":
     aggregation_label = st.selectbox("aggregation",aggregation_dict.keys())
     aggregation_short = aggregation_dict.get(aggregation_label)
 
-    normalization = st.radio("normalization",["absolute count","average drinks per day"])
+    normalization = st.radio("normalization",["average drinks per day", "absolute count"])
 
     chart_drinks_per_period(df, aggregation_short, aggregation_label, normalization) 
 
 
-    st.markdown(("Consuming 100g alcohol per week (roughly 1 drink per day) or more "
+    st.markdown(("#### Information about alcohol consumption and mortality risk" 
+ 
+                 "\nConsuming 100g alcohol per week (roughly 1 drink per day) or more "
                  "is associated with increased risk of all cause mortality " 
-                 "according to 2018 [study](https://doi.org/10.1016/S0140-6736(18)30134-X)"))
+                 "according to a 2018 [study](https://doi.org/10.1016/S0140-6736(18)30134-X) in the Lancet."
+                 "\nAlthough moderate drinking is associated with lower risk of cardiovascular disease events"
+                 ", there is amount of alcohol consumption which results in lower all cause mortality risk."))
     st.image("media/all_cause_mortality.jpg") 
 
