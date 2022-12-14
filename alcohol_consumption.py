@@ -16,6 +16,7 @@ def process_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df["day_of_week"] = df["date_time"].dt.day_name()
     df["day_number_of_week"] = df["date_time"].dt.day_of_week
     df["quarter"] = df["date_time"].dt.quarter
+    df["date"] = df["date_time"].dt.date
 
     return df
 
@@ -34,18 +35,26 @@ def chart_drinks_per_period(df, aggregation_short, aggregation_label, normalizat
     """Make a bar chart of the number of drinks consumed per time period"""
 
     df_date_range = get_date_spine(df)
+
+    df["date"] = pd.to_datetime(df["date_time"].dt.date, utc=True)
+    df_date_range = df_date_range.merge(df.drop_duplicates(subset="date")[["date","drink_type"]], left_on="date", right_on="date", how="left")
     
     if aggregation_label == "day of week":
         count_of_days = df.groupby(["day_of_week","day_number_of_week"]).size().rename("count_of_drinks")
         count_of_drinks = df_date_range.groupby(["day_of_week","day_number_of_week"]).size().rename("count_of_days")
+        count_drinking_days = ((df_date_range.groupby(["date","day_of_week","day_number_of_week"])["drink_type"].count() > 0)
+        .groupby(["day_of_week","day_number_of_week"]).sum().rename("count_drinking_days"))
+
     else:
         count_of_days = df_date_range.set_index("date").resample(aggregation_short,convention='start').size().rename("count_of_days")
         count_of_drinks = df.set_index("date_time").resample(aggregation_short,convention='start').size().rename("count_of_drinks")
+        count_drinking_days = (df_date_range.groupby("date")["drink_type"].count() > 0).resample(aggregation_short,convention='start').sum().rename("count_drinking_days")
 
-    df_agg = pd.concat([count_of_drinks, count_of_days], axis=1).reset_index()
+    df_agg = pd.concat([count_of_drinks, count_of_days, count_drinking_days], axis=1).reset_index()
     df_agg = df_agg.rename({"index":"date_time"}, axis=1)
-
     df_agg["drinks_per_day"] = df_agg["count_of_drinks"] / df_agg["count_of_days"]
+    df_agg["% days alcohol consumed"] = 100*(df_agg["count_drinking_days"] / df_agg["count_of_days"])
+
 
     if aggregation_label == "day of week":
         x = alt.X('day_of_week:N', type="nominal" ,sort=None)
@@ -57,9 +66,13 @@ def chart_drinks_per_period(df, aggregation_short, aggregation_label, normalizat
     if normalization == 'average drinks per day':
         y_column_to_chart = "drinks_per_day"
         line = alt.Chart(pd.DataFrame({'y': [1]})).mark_rule().encode(y='y')
-    else:
+    elif normalization == "absolute count":
         y_column_to_chart = "count_of_drinks" 
         line = alt.Chart(pd.DataFrame({'y': [0]})).mark_rule().encode(y='y')
+    elif normalization == "% days alcohol consumed":
+        y_column_to_chart = "% days alcohol consumed"
+        line = alt.Chart(pd.DataFrame({'y': [0]})).mark_rule().encode(y='y')
+
 
 
     c = alt.Chart(df_agg).mark_bar(width=BAR_WIDTH).encode(x=x,y=y_column_to_chart).properties(
@@ -91,7 +104,7 @@ if __name__ == "__main__":
     aggregation_label = st.selectbox("aggregation",aggregation_dict.keys())
     aggregation_short = aggregation_dict.get(aggregation_label)
 
-    normalization = st.radio("normalization",["average drinks per day", "absolute count"])
+    normalization = st.radio("normalization",["average drinks per day", "absolute count","% days alcohol consumed"])
 
     chart_drinks_per_period(df, aggregation_short, aggregation_label, normalization) 
 
