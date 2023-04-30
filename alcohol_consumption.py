@@ -25,7 +25,7 @@ def get_and_process_data():
         df = pd.read_csv("data/test_data.csv", parse_dates=['date_time'])
     else:
         client = get_bigquery_client()
-        query = "SELECT * FROM `personal-consumption-tracker.consumption.combined_drinks`"
+        query = "SELECT * FROM `personal-consumption-tracker.dbt_pvonglehn.alcohol`"
         df = run_query(query, client)
     
     return process_dataframe(df)
