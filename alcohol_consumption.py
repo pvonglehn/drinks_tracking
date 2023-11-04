@@ -16,6 +16,7 @@ def process_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df["day_of_week"] = df["date_time"].dt.day_name()
     df["day_number_of_week"] = df["date_time"].dt.day_of_week
     df["quarter"] = df["date_time"].dt.quarter
+    df["year"] = df["date_time"].dt.year
     df["date"] = df["date_time"].dt.date
 
     return df
@@ -100,7 +101,7 @@ if __name__ == "__main__":
 
     df = get_and_process_data()
     
-    aggregation_dict = {"month":"MS","quarter":"QS","day of week":None}
+    aggregation_dict = {"month":"MS","quarter":"QS","year":"YS","day of week":None}
     aggregation_label = st.selectbox("aggregation",aggregation_dict.keys())
     aggregation_short = aggregation_dict.get(aggregation_label)
 
